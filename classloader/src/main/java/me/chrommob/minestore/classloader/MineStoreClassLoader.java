@@ -91,10 +91,12 @@ public class MineStoreClassLoader extends URLClassLoader {
         }
     }
 
-    private final static String[] IGNORED_PACKAGES = new String[]{
-            "org.incendo.cloud.",
-            "net.kyori.",
+    private final static String[] PARENT_FIRST_PACKAGES = new String[]{
             "org.slf4j.",
+            };
+
+    private final static String[] CHILD_FIRST_PACKAGES = new String[]{
+            "net.kyori.",
             };
 
     @Override
@@ -104,22 +106,43 @@ public class MineStoreClassLoader extends URLClassLoader {
             return super.loadClass(name, resolve);
         }
 
-        for (String ignoredPackage : IGNORED_PACKAGES) {
-            if (name.startsWith(ignoredPackage)) {
+        // Check if already loaded
+        Class<?> c = findLoadedClass(name);
+        if (c != null) {
+            if (resolve) {
+                resolveClass(c);
+            }
+            return c;
+        }
+
+        // For child-first packages, try loading from this classloader first
+        for (String childFirstPackage : CHILD_FIRST_PACKAGES) {
+            if (name.startsWith(childFirstPackage)) {
+                try {
+                    c = findClass(name);
+                    if (resolve) {
+                        resolveClass(c);
+                    }
+                    return c;
+                } catch (ClassNotFoundException e) {
+                    // Fall back to parent if not found in child
+                    return super.loadClass(name, resolve);
+                }
+            }
+        }
+
+        // For parent-first packages, delegate to parent
+        for (String parentFirstPackage : PARENT_FIRST_PACKAGES) {
+            if (name.startsWith(parentFirstPackage)) {
                 return super.loadClass(name, resolve);
             }
         }
 
-        // First, check if already loaded
-        Class<?> c = findLoadedClass(name);
-
-        // Try to load it from parent first
-        if (c == null) {
-            try {
-                c = super.loadClass(name, resolve);
-            } catch (ClassNotFoundException e) {
-                c = findClass(name); // from the URLs in this classloader
-            }
+        // Default behavior: try parent first, then this classloader
+        try {
+            c = super.loadClass(name, resolve);
+        } catch (ClassNotFoundException e) {
+            c = findClass(name);
         }
 
         if (resolve) {
@@ -148,6 +171,14 @@ public class MineStoreClassLoader extends URLClassLoader {
         dependencies.add(new MineStorePluginDependency("org.mariadb.jdbc", "mariadb-java-client", "3.5.3", RepositoryRegistry.MAVEN.getRepository()));
         dependencies.add(new MineStorePluginDependency("com.mysql", "mysql-connector-j", "9.3.0", RepositoryRegistry.MAVEN.getRepository()));
         dependencies.add(new MineStorePluginDependency("io.leangen.geantyref", "geantyref", "1.3.15", RepositoryRegistry.MAVEN.getRepository()));
+        dependencies.add(new MineStorePluginDependency("com.google.code.gson", "gson", "2.11.0", RepositoryRegistry.MAVEN.getRepository()));
+        dependencies.add(new MineStorePluginDependency("net.kyori", "adventure-api", "4.18.0", RepositoryRegistry.MAVEN.getRepository()));
+        dependencies.add(new MineStorePluginDependency("net.kyori", "adventure-text-serializer-plain", "4.18.0", RepositoryRegistry.MAVEN.getRepository()));
+        dependencies.add(new MineStorePluginDependency("net.kyori", "adventure-text-serializer-legacy", "4.18.0", RepositoryRegistry.MAVEN.getRepository()));
+        dependencies.add(new MineStorePluginDependency("net.kyori", "adventure-text-minimessage", "4.18.0", RepositoryRegistry.MAVEN.getRepository()));
+        dependencies.add(new MineStorePluginDependency("net.kyori", "adventure-key", "4.18.0", RepositoryRegistry.MAVEN.getRepository()));
+        dependencies.add(new MineStorePluginDependency("net.kyori", "examination-api", "1.3.0", RepositoryRegistry.MAVEN.getRepository()));
+        dependencies.add(new MineStorePluginDependency("net.kyori", "examination-string", "1.3.0", RepositoryRegistry.MAVEN.getRepository()));
 
         return new MineStoreDependencies(dependencies);
     }
@@ -158,7 +189,8 @@ public class MineStoreClassLoader extends URLClassLoader {
 
     public void addCommonJar(Map<String, String> relocations) {
         Set<MineStorePluginDependency> dependencies = new HashSet<>();
-        dependencies.add(new MineStorePluginDependency("", "MineStore-Common", "", relocations, null));
+        dependencies.add(new MineStorePluginDependency("", "MineStore-API", "", new HashMap<>(), null, true));
+        dependencies.add(new MineStorePluginDependency("", "MineStore-Common", "", new HashMap<>(), null, true));
         add(new MineStoreDependencies(dependencies));
     }
 

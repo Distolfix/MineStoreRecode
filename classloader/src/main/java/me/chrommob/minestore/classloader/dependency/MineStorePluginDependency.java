@@ -15,8 +15,8 @@ public class MineStorePluginDependency {
     public static final Map<String, String> defaultRelocations = new HashMap<>();
     static {
         defaultRelocations.put("com.mysql", "me.chrommob.libs.mysql");
-        defaultRelocations.put("io.leangen.geantyref", "me.chrommob.libs.geantyref");
-        defaultRelocations.put("org.incendo.cloud", "me.chrommob.libs.incendo");
+        // io.leangen.geantyref should NOT be relocated - it's used by compiled code
+        // org.incendo.cloud should NOT be relocated - it's used by compiled code
         defaultRelocations.put("com.google.gson", "me.chrommob.libs.gson");
     }
     private final String group;

@@ -91,6 +91,15 @@ allprojects {
 
     processResources {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        def props = [version: project.version, "@version@": project.version]
+        inputs.properties props
+        filteringCharset 'UTF-8'
+        filesMatching('plugin.yml') {
+            expand props
+        }
+        filesMatching('bungee.yml') {
+            expand props
+        }
     }
 }
 
@@ -180,6 +189,8 @@ tasks.register("clearResources") {
 tasks.clean.dependsOn(clearResources)
 
 tasks.register("copyJar", Copy) {
+    dependsOn(":MineStore-API:shadowJar")
+    dependsOn(":MineStore-ClassLoader:shadowJar")
     dependsOn(":common:shadowJar")
     dependsOn(":bukkit:bukkit-impl:shadowJar")
     dependsOn(":bukkit:impl:kyori:compat:shadowJar")
@@ -192,6 +203,14 @@ tasks.register("copyJar", Copy) {
     doFirst {
         delete("src/main/resources/jars/**.jar")
     }
+    from(project(":MineStore-API").tasks.named("shadowJar")) {
+        rename { "MineStore-API.jarjar" }
+    }
+
+    from(project(":MineStore-ClassLoader").tasks.named("shadowJar")) {
+        rename { "MineStore-ClassLoader.jarjar" }
+    }
+
     from(project(":bukkit:bukkit-impl").tasks.named("shadowJar")) {
         rename { "MineStore-Bukkit.jarjar" }
     }

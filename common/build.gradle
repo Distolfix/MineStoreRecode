@@ -9,6 +9,7 @@ dependencies {
     compileOnly(project(path: ':MineStore-ClassLoader', configuration: 'shadow'))
 
     implementation "com.google.guava:guava:33.4.7-jre"
+    implementation "com.google.code.gson:gson:2.13.2"
     implementation 'com.zaxxer:HikariCP:4.0.3'
     implementation "org.yaml:snakeyaml:2.2"
 
@@ -22,5 +23,8 @@ dependencies {
 shadowJar {
     relocate 'com.zaxxer', 'me.chrommob.minestore.libs.com.zaxxer'
     relocate "org.yaml", "me.chrommob.minestore.libs.org.yaml"
+    relocate 'com.google.common', 'me.chrommob.minestore.libs.com.google.common'
+    relocate 'com.google.gson', 'me.chrommob.minestore.libs.com.google.gson'
+    relocate 'com.google.thirdparty', 'me.chrommob.minestore.libs.com.google.thirdparty'
 
 }
